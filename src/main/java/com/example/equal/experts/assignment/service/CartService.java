@@ -38,14 +38,15 @@ public class CartService implements CommandLineRunner {
         double quantity = addToCartRequest.getQuantity();
         String productName = addToCartRequest.getProductName();
 
+        if (Objects.isNull(productName) || productName.trim().length() == 0) {
+            throw new IllegalArgumentException("product name cant be null or empty");
+        }
+
         Optional<Product> productDetailsOpt = productService.getProductDetails(productName);
         productDetailsOpt.orElseThrow(() -> new ProductNotFoundException("No product available with product name : " + productName));
 
         String cartId = addToCartRequest.getCartId();
 
-        if (Objects.isNull(productName) || productName.trim().length() == 0) {
-            throw new IllegalArgumentException("product name cant be null or empty");
-        }
 
         if (Objects.isNull(cartId) || cartId.trim().length() == 0) {
             throw new IllegalArgumentException("cart id cant be null or empty");
