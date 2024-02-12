@@ -87,9 +87,12 @@ public class CartService implements CommandLineRunner {
         Cart cart = getCart(cartId);
 
         double subTotalForCartItems = calculateSubTotalForCartItems(cart);
+        subTotalForCartItems = roundOffValue(subTotalForCartItems);
+
         double taxPayable = getTaxAmount(subTotalForCartItems, taxRate);
 
         double totalPayableAmount = subTotalForCartItems + taxPayable;
+        totalPayableAmount = roundOffValue(totalPayableAmount);
 
         return CartDto
                 .builder()
@@ -101,9 +104,14 @@ public class CartService implements CommandLineRunner {
                 .build();
     }
 
+    private double roundOffValue(double input) {
+        return Math.round(input * 100.0) / 100.0;
+    }
+
     private double getTaxAmount(double input, double taxRate) {
         double taxMultiple = taxRate / 100;
-        return input * taxMultiple;
+        double taxValue = input * taxMultiple;
+        return roundOffValue(taxValue);
     }
 
     private double calculateSubTotalForCartItems(Cart cart) {
