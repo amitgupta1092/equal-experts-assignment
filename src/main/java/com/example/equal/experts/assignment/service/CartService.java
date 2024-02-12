@@ -6,8 +6,8 @@ import com.example.equal.experts.assignment.exception.ProductNotFoundException;
 import com.example.equal.experts.assignment.model.AddToCartRequest;
 import com.example.equal.experts.assignment.model.CartDto;
 import com.example.equal.experts.assignment.model.Product;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -16,12 +16,13 @@ import java.util.Optional;
 import java.util.Set;
 
 @Service
-public class CartService implements CommandLineRunner {
+public class CartService {
 
     private final Cart dummyCart;
     private final ProductService productService;
 
     @Value("${tax.rate}")
+    @Setter
     private double taxRate;
 
     public CartService(ProductService productService) {
@@ -32,25 +33,14 @@ public class CartService implements CommandLineRunner {
 
     public Cart addToCart(AddToCartRequest addToCartRequest) {
 
-        if (Objects.isNull(addToCartRequest))
-            throw new NullPointerException("cart request cant be null");
+        validateAddToCartRequest(addToCartRequest);
 
         double quantity = addToCartRequest.getQuantity();
         String productName = addToCartRequest.getProductName();
-
-        if (Objects.isNull(productName) || productName.trim().length() == 0) {
-            throw new IllegalArgumentException("product name cant be null or empty");
-        }
+        String cartId = addToCartRequest.getCartId();
 
         Optional<Product> productDetailsOpt = productService.getProductDetails(productName);
         productDetailsOpt.orElseThrow(() -> new ProductNotFoundException("No product available with product name : " + productName));
-
-        String cartId = addToCartRequest.getCartId();
-
-
-        if (Objects.isNull(cartId) || cartId.trim().length() == 0) {
-            throw new IllegalArgumentException("cart id cant be null or empty");
-        }
 
         Cart cart = getCart(cartId);
         Optional<CartItem> cartItemForProductOpt = getCartItemForProduct(cart, productName);
@@ -69,6 +59,30 @@ public class CartService implements CommandLineRunner {
 
         saveCart(cart);
         return cart;
+    }
+
+    private void validateAddToCartRequest(AddToCartRequest addToCartRequest) {
+
+        if (Objects.isNull(addToCartRequest))
+            throw new NullPointerException("cart request cant be null");
+
+        double quantity = addToCartRequest.getQuantity();
+        String productName = addToCartRequest.getProductName();
+        String cartId = addToCartRequest.getCartId();
+
+        if (isValidString(productName)) {
+            throw new IllegalArgumentException("product name cant be null or empty");
+        }
+        if (isValidString(cartId)) {
+            throw new IllegalArgumentException("cart Id cant be null or empty");
+        }
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("quantity should be greater than 0");
+        }
+    }
+
+    private static boolean isValidString(String cartId) {
+        return Objects.isNull(cartId) || cartId.trim().length() == 0;
     }
 
     private void addCartItem(Cart cart, CartItem cartItem) {
@@ -160,26 +174,5 @@ public class CartService implements CommandLineRunner {
     private Cart getCart(String cartId) {
         //fetch cart from repo
         return dummyCart;
-    }
-
-    @Override
-    public void run(String... args) throws Exception {
-
-        AddToCartRequest addToCartRequest = AddToCartRequest
-                .builder()
-                .cartId("c1")
-                .productName("cornflakes")
-                .quantity(1)
-                .build();
-
-        addToCart(addToCartRequest);
-        addToCart(addToCartRequest);
-
-        addToCartRequest.setProductName("weetabix");
-        addToCart(addToCartRequest);
-
-        CartDto cartDto = getCartDetails("c1");
-        System.out.println(cartDto.toString());
-
     }
 }
